@@ -68,10 +68,7 @@ psql -U parking_user -d parking_db -f sql/01_schema.sql
 psql -U parking_user -d parking_db -f sql/02_functions_procedures.sql
 psql -U parking_user -d parking_db -f sql/03_triggers.sql
 psql -U parking_user -d parking_db -f sql/04_seed.sql
-```
-
-3. (Optional) Run demo verification queries:
-```bash
+psql -U parking_user -d parking_db -f sql/06_procedures_and_cursor.sql
 psql -U parking_user -d parking_db -f sql/05_demo_queries.sql
 ```
 
@@ -106,7 +103,8 @@ The web application is now live at: **http://localhost:8000**
 
 | Role | Email Address | Plaintext Password | Seed Profile Details |
 |---|---|---|---|
-| **ADMIN** | `admin@parking.local` | `Admin@123` | Master Parking Administrator |
+| **ADMIN** (Super) | `admin@parking.local` | `Admin@123` | Master Parking Administrator (All facilities) |
+| **FACILITY_ADMIN** | `owner1@parking.com` | `Owner@123` | Facility Owner (Scoped to Central Park Parking) |
 | **CUSTOMER** | `demo@parking.local` | `Customer@123` | Pre-registered with 2 vehicles (`KA01AB1234`, `KA02CD5678`) |
 | **CUSTOMER** | `customer@parking.local`| `Customer@123` | Fresh customer account |
 
@@ -323,8 +321,15 @@ In PostgreSQL, standard `PROCEDURE` calls executed via `CALL` cannot directly re
 - `POST /admin/exit` -> Calls `process_vehicle_exit()` database function.
 - `GET  /admin/sessions` -> Dual-tab view of parking sessions and simulated payment receipts.
 - `GET  /admin/facilities` -> Facilities and zones summary.
-- `GET  /admin/spots` -> Comprehensive spot occupancy grid.
+- `GET  /admin/spots` -> Comprehensive spot occupancy grid with direct procedure action buttons.
+- `POST /admin/spots/{spot_id}/maintenance` -> Calls `set_spot_maintenance_proc()` procedure.
+- `POST /admin/spots/{spot_id}/release` -> Calls `release_spot_from_maintenance_proc()` procedure.
 - `GET  /admin/reports/occupancy` -> Visual occupancy progress bars and revenue analytics.
+- `GET  /admin/reports/cursor-occupancy` -> Calls `generate_occupancy_report_cursor_proc()` explicit cursor procedure.
+- `GET  /admin/tariffs` -> View and edit hourly parking tariffs per zone and vehicle type.
+- `POST /admin/tariffs/{tariff_id}/update` -> Updates hourly rate directly in PostgreSQL.
+- `GET  /admin/users` -> Super Admin management of facility owners and multi-tenant access.
+- `POST /admin/users` -> Creates new `FACILITY_ADMIN` account scoped to a specific parking lot.
 
 ---
 
@@ -337,3 +342,133 @@ In PostgreSQL, standard `PROCEDURE` calls executed via `CALL` cannot directly re
 - [x] **60-Minute Grace Expiration**: Automatic lazy and periodic batch expiration via `expire_reservations()`.
 - [x] **Full Audit Trail**: Every insertion and update recorded in `audit_logs` with JSONB payloads.
 - [x] **Error Messaging**: PostgreSQL exceptions (`RAISE EXCEPTION`) captured and cleanly rendered in Bootstrap alert banners.
+- [x] **PostgreSQL Procedures (`CREATE PROCEDURE`)**: Genuine `prokind = 'p'` procedures invoked via `CALL`.
+- [x] **Explicit PL/pgSQL Cursor**: `DECLARE`, `OPEN`, `FETCH`, and `CLOSE` lifecycle demonstrated on `occupancy_report_logs`.
+
+---
+
+## 10. Stored Procedures and Cursor Demonstration
+
+### Architecture: Functions vs. Stored Procedures
+
+> **Viva Explanation / Core Distinction:**  
+> *"Functions are used when the application needs a return value through `SELECT`. Procedures are used for administrative commands invoked through `CALL`. The cursor procedure demonstrates row-by-row processing across parking facilities."*
+
+1. **PL/pgSQL Functions (`CREATE FUNCTION ... RETURNS`)**:
+   - Invoked using `SELECT func_name(...)`.
+   - Used throughout ParkEase where the application requires an immediate return value (e.g. `create_reservation()` returns UUID, `calculate_parking_fee()` returns NUMERIC, `process_vehicle_exit()` returns payment UUID).
+2. **PL/pgSQL Procedures (`CREATE PROCEDURE ... LANGUAGE plpgsql`)**:
+   - Invoked using `CALL proc_name(...)`.
+   - Executed for administrative state modifications, maintenance workflows, and batch cursor reporting where no return value is required.
+
+---
+
+### Registered Procedures in PostgreSQL
+
+Verify all procedures using the system catalog:
+```sql
+SELECT proname, prokind
+FROM pg_proc
+WHERE pronamespace = 'public'::regnamespace AND prokind = 'p'
+ORDER BY proname;
+```
+*(In PostgreSQL, `prokind = 'p'` designates a genuine Stored Procedure, whereas `prokind = 'f'` designates a Function).*
+
+| Procedure Name | Arguments | Purpose & Operational Behavior |
+| :--- | :--- | :--- |
+| `expire_old_reservations_proc` | *None* | Batch-expires CONFIRMED reservations older than 60 mins and frees spots. |
+| `set_spot_maintenance_proc` | `p_spot_id UUID, p_reason TEXT` | Locks spot via `FOR UPDATE`, enforces that RESERVED/OCCUPIED spots cannot be placed into maintenance, updates status to `MAINTENANCE`, and logs to `audit_logs`. |
+| `release_spot_from_maintenance_proc` | `p_spot_id UUID` | Validates that spot is in `MAINTENANCE`, locks row via `FOR UPDATE`, resets status to `AVAILABLE`, and records an audit log entry. |
+| `generate_occupancy_report_cursor_proc` | *None* | Explicit **CURSOR** procedure. Iterates over active facilities row-by-row, calculates occupancy aggregates, and records snapshots in `occupancy_report_logs`. |
+| `refresh_parking_statistics_proc` | *None* | Master maintenance procedure that cascades the cursor report generator and the reservation cleanup procedure. |
+
+---
+
+### Explicit Cursor Implementation Details
+
+File: `sql/06_procedures_and_cursor.sql`
+
+The procedure `generate_occupancy_report_cursor_proc()` implements the full ANSI/PL/pgSQL cursor lifecycle:
+```sql
+DECLARE
+    -- 1. Explicit cursor definition
+    facility_cursor CURSOR FOR
+        SELECT id, name
+        FROM parking_facilities
+        WHERE status = 'ACTIVE'
+        ORDER BY name;
+BEGIN
+    TRUNCATE TABLE occupancy_report_logs;
+
+    -- 2. Open cursor
+    OPEN facility_cursor;
+
+    LOOP
+        -- 3. Fetch next row
+        FETCH facility_cursor INTO v_facility_id, v_facility_name;
+        EXIT WHEN NOT FOUND;
+
+        -- Row-by-row processing and aggregation
+        SELECT ... INTO v_total, v_available, v_reserved, v_occupied, v_maintenance
+        FROM parking_zones pz JOIN parking_spots ps ON ps.zone_id = pz.id
+        WHERE pz.facility_id = v_facility_id;
+
+        INSERT INTO occupancy_report_logs (...) VALUES (...);
+    END LOOP;
+
+    -- 4. Close cursor
+    CLOSE facility_cursor;
+END;
+```
+
+> **Academic Note on Cursor Usage:**  
+> In production environments, set-based relational operations (`GROUP BY`) are generally preferred for simple aggregates. This procedure is specifically implemented for **Advanced Database Systems evaluation** to demonstrate genuine cursor resource management (`OPEN` -> `FETCH` -> `CLOSE`) and row-by-row batch table population.
+
+---
+
+### How to Execute and Verify in pgAdmin / psql
+
+Open **pgAdmin Query Tool** (or `psql -U parking_user -d parking_db`) and run:
+
+#### 1. Test Cursor Report Generation
+```sql
+-- Execute cursor procedure
+CALL generate_occupancy_report_cursor_proc();
+
+-- Inspect generated snapshot table
+SELECT facility_name, total_spots, available_spots, reserved_spots, occupied_spots, maintenance_spots, occupancy_percentage, generated_at
+FROM occupancy_report_logs;
+```
+
+#### 2. Test Spot Maintenance State Machine
+```sql
+-- Find an available spot
+SELECT id, spot_number, status FROM parking_spots WHERE status = 'AVAILABLE' LIMIT 1;
+
+-- Put spot into maintenance (replace with actual UUID)
+CALL set_spot_maintenance_proc('7521a43d-9de1-47ff-b509-61ac3da279d7', 'Sensor calibration');
+
+-- Verify status changed in parking_spots
+SELECT id, spot_number, status FROM parking_spots WHERE id = '7521a43d-9de1-47ff-b509-61ac3da279d7';
+
+-- Verify audit log with reason
+SELECT operation, record_id, details, created_at FROM audit_logs WHERE record_id = '7521a43d-9de1-47ff-b509-61ac3da279d7' ORDER BY id DESC LIMIT 1;
+
+-- Release spot back to AVAILABLE
+CALL release_spot_from_maintenance_proc('7521a43d-9de1-47ff-b509-61ac3da279d7');
+```
+
+#### 3. Test Invalid State Rejection
+```sql
+-- Attempting to release an already AVAILABLE spot will raise a clear exception:
+-- ERROR: Cannot release spot 1: current status is AVAILABLE, expected MAINTENANCE.
+CALL release_spot_from_maintenance_proc('7521a43d-9de1-47ff-b509-61ac3da279d7');
+```
+
+---
+
+### Web UI Demonstration
+
+1. **Cursor Report**: Log in as Admin or Facility Owner and click **Cursor Report** (`/admin/reports/cursor-occupancy`) in the top navbar. Every visit directly calls the cursor procedure and presents the fresh snapshot from `occupancy_report_logs`.
+2. **Maintenance Actions**: On the **Spots** page (`/admin/spots`), each row features interactive procedure action buttons (**Set Maintenance** / **Release Spot**) that execute `CALL set_spot_maintenance_proc` and `CALL release_spot_from_maintenance_proc`.
+

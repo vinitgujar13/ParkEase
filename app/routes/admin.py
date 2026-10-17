@@ -602,6 +602,8 @@ async def spots(request: Request):
         context={
             "user": user,
             "spots": all_spots,
+            "success": request.query_params.get("success"),
+            "error": request.query_params.get("error"),
         },
     )
 
@@ -860,3 +862,140 @@ async def create_facility_admin(
         if "unique" in error_msg.lower() or "duplicate" in error_msg.lower():
             error_msg = "Email already registered."
         return RedirectResponse(f"/admin/users?error={error_msg}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# POST /admin/spots/{spot_id}/maintenance  –  Call set_spot_maintenance_proc
+# ---------------------------------------------------------------------------
+@router.post("/spots/{spot_id}/maintenance")
+async def set_spot_maintenance(
+    request: Request,
+    spot_id: str,
+    reason: str = Form("Scheduled Maintenance"),
+):
+    user = require_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    scoped, fid = facility_filter(user)
+
+    try:
+        async with get_db() as conn:
+            if scoped:
+                cur = await conn.execute(
+                    """
+                    SELECT ps.id FROM parking_spots ps
+                    JOIN parking_zones pz ON pz.id = ps.zone_id
+                    WHERE ps.id = %s AND pz.facility_id = %s
+                    """,
+                    (spot_id, fid),
+                )
+                if not await cur.fetchone():
+                    return RedirectResponse(
+                        "/admin/spots?error=Unauthorized+to+modify+this+spot.",
+                        status_code=302,
+                    )
+
+            await conn.execute(
+                "CALL set_spot_maintenance_proc(%s, %s)",
+                (spot_id, reason.strip() or "Scheduled Maintenance"),
+            )
+
+        return RedirectResponse(
+            "/admin/spots?success=Spot+successfully+placed+into+MAINTENANCE.",
+            status_code=302,
+        )
+
+    except Exception as exc:
+        error_msg = str(exc).split("\n")[0]
+        return RedirectResponse(f"/admin/spots?error={error_msg}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# POST /admin/spots/{spot_id}/release  –  Call release_spot_from_maintenance_proc
+# ---------------------------------------------------------------------------
+@router.post("/spots/{spot_id}/release")
+async def release_spot_maintenance(
+    request: Request,
+    spot_id: str,
+):
+    user = require_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    scoped, fid = facility_filter(user)
+
+    try:
+        async with get_db() as conn:
+            if scoped:
+                cur = await conn.execute(
+                    """
+                    SELECT ps.id FROM parking_spots ps
+                    JOIN parking_zones pz ON pz.id = ps.zone_id
+                    WHERE ps.id = %s AND pz.facility_id = %s
+                    """,
+                    (spot_id, fid),
+                )
+                if not await cur.fetchone():
+                    return RedirectResponse(
+                        "/admin/spots?error=Unauthorized+to+modify+this+spot.",
+                        status_code=302,
+                    )
+
+            await conn.execute(
+                "CALL release_spot_from_maintenance_proc(%s)",
+                (spot_id,),
+            )
+
+        return RedirectResponse(
+            "/admin/spots?success=Spot+successfully+released+from+MAINTENANCE+to+AVAILABLE.",
+            status_code=302,
+        )
+
+    except Exception as exc:
+        error_msg = str(exc).split("\n")[0]
+        return RedirectResponse(f"/admin/spots?error={error_msg}", status_code=302)
+
+
+# ---------------------------------------------------------------------------
+# GET /admin/reports/cursor-occupancy  –  Execute cursor procedure & render snapshot
+# ---------------------------------------------------------------------------
+@router.get("/reports/cursor-occupancy", response_class=HTMLResponse)
+async def cursor_occupancy_report(request: Request):
+    user = require_admin(request)
+    if not user:
+        return RedirectResponse("/login", status_code=302)
+
+    scoped, fid = facility_filter(user)
+
+    async with get_db() as conn:
+        # 1. Execute genuine explicit cursor procedure in PostgreSQL
+        await conn.execute("CALL generate_occupancy_report_cursor_proc()")
+
+        # 2. Query the populated snapshot table
+        if scoped:
+            cur = await conn.execute(
+                """
+                SELECT * FROM occupancy_report_logs
+                WHERE facility_id = %s
+                ORDER BY facility_name
+                """,
+                (fid,),
+            )
+        else:
+            cur = await conn.execute(
+                "SELECT * FROM occupancy_report_logs ORDER BY facility_name"
+            )
+        report_rows = await cur.fetchall()
+
+    return templates.TemplateResponse(
+        request=request,
+        name="admin/cursor_occupancy.html",
+        context={
+            "user": user,
+            "report_rows": report_rows,
+            "success": request.query_params.get("success"),
+            "error": request.query_params.get("error"),
+        },
+    )
+
