@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Occupancy & Revenue Reports - Admin{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-bar-chart-line text-primary me-2"></i>Occupancy & Revenue Reports</h2>
+            <p class="text-muted mb-0">Live utilization rates and collection metrics by facility and vehicle classification.</p>
+        </div>
+        <a href="/admin/dashboard" class="btn btn-outline-secondary">
+            <i class="bi bi-speedometer2 me-1"></i>Dashboard
+        </a>
+    </div>
+</div>
+
+<!-- Occupancy by Facility & Vehicle Type -->
+<div class="card shadow-sm border-0 mb-4">
+    <div class="card-header bg-light">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-pie-chart-fill me-2 text-primary"></i>Spot Occupancy Rates</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Facility</th>
+                        <th>Vehicle Classification</th>
+                        <th>Total Spots</th>
+                        <th>Occupied</th>
+                        <th>Reserved</th>
+                        <th>Available</th>
+                        <th>Occupancy %</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in occupancy %}
+                    <tr>
+                        <td class="fw-bold">{{ row.facility }}</td>
+                        <td>
+                            {% if row.vehicle_type == 'TWO_WHEELER' %}
+                            <span class="badge bg-info text-dark">Two-Wheeler</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Four-Wheeler</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">{{ row.total_spots }}</td>
+                        <td><span class="badge bg-danger">{{ row.occupied }}</span></td>
+                        <td><span class="badge bg-warning text-dark">{{ row.reserved }}</span></td>
+                        <td><span class="badge bg-success">{{ row.available }}</span></td>
+                        <td style="min-width: 180px;">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="progress flex-grow-1" style="height: 12px;">
+                                    <div class="progress-bar {% if (row.occupancy_pct or 0) > 80 %}bg-danger{% elif (row.occupancy_pct or 0) > 50 %}bg-warning{% else %}bg-success{% endif %}"
+                                         role="progressbar"
+                                         style="width: {{ row.occupancy_pct or 0 }}%">
+                                    </div>
+                                </div>
+                                <span class="small fw-bold">{{ row.occupancy_pct or 0 }}%</span>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Revenue Analytics by Facility -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-cash-stack me-2 text-success"></i>Revenue by Facility</h5>
+    </div>
+    <div class="card-body p-0">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Facility Name</th>
+                        <th>Completed Paid Transactions</th>
+                        <th>Total Revenue Collected</th>
+                        <th>Average per Transaction</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in revenue %}
+                    <tr>
+                        <td class="fw-bold">{{ r.facility }}</td>
+                        <td>
+                            <span class="badge bg-secondary fs-6">{{ r.transactions }}</span>
+                        </td>
+                        <td>
+                            <span class="fs-5 fw-bold text-success">₹{{ "%.2f"|format(r.total_revenue) }}</span>
+                        </td>
+                        <td>
+                            <span class="text-muted">
+                                ₹{{ "%.2f"|format((r.total_revenue / r.transactions) if r.transactions > 0 else 0) }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}

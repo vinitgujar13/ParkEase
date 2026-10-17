@@ -1,0 +1,164 @@
+{% extends "base.html" %}
+{% block title %}Customer Dashboard - ParkEase{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Customer Dashboard</h2>
+            <p class="text-muted mb-0">Welcome back, <strong>{{ user.name }}</strong> ({{ user.email }})</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/customer/vehicles" class="btn btn-outline-primary">
+                <i class="bi bi-car-front me-1"></i>My Vehicles
+            </a>
+            <a href="/customer/reserve" class="btn btn-primary">
+                <i class="bi bi-calendar-plus me-1"></i>New Reservation
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Stats Overview -->
+<div class="row g-3 mb-4">
+    <div class="col-md-4">
+        <div class="card stat-card bg-primary text-white p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-white-50">Registered Vehicles</div>
+                    <div class="stat-number fs-1 fw-bold">{{ vehicles_count }}</div>
+                </div>
+                <i class="bi bi-car-front stat-icon fs-1 opacity-75"></i>
+            </div>
+            <a href="/customer/vehicles" class="text-white text-decoration-none small mt-2 d-inline-block">
+                Manage vehicles <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card {% if active_reservation %}bg-warning text-dark{% else %}bg-secondary text-white{% endif %} p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label {% if active_reservation %}text-dark-50{% else %}text-white-50{% endif %}">Active / Confirmed Booking</div>
+                    <div class="stat-number fs-1 fw-bold">{% if active_reservation %}1{% else %}0{% endif %}</div>
+                </div>
+                <i class="bi bi-clock-history stat-icon fs-1 opacity-75"></i>
+            </div>
+            <a href="/customer/reservations" class="{% if active_reservation %}text-dark{% else %}text-white{% endif %} text-decoration-none small mt-2 d-inline-block">
+                View reservations <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card stat-card bg-success text-white p-3 shadow-sm">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-white-50">Reservation Status</div>
+                    <div class="stat-number fs-3 fw-bold">
+                        {% if active_reservation %}
+                            {{ active_reservation.status }}
+                        {% else %}
+                            READY
+                        {% endif %}
+                    </div>
+                </div>
+                <i class="bi bi-check-circle stat-icon fs-1 opacity-75"></i>
+            </div>
+            <span class="small text-white-50 mt-2 d-inline-block">
+                {% if active_reservation %}Spot #{{ active_reservation.spot_number }} locked{% else %}Ready to book{% endif %}
+            </span>
+        </div>
+    </div>
+</div>
+
+<!-- Active Reservation Card if present -->
+{% if active_reservation %}
+<div class="card border-warning mb-4 shadow-sm">
+    <div class="card-header bg-warning bg-opacity-25 d-flex justify-content-between align-items-center">
+        <span class="fw-bold text-dark"><i class="bi bi-ticket-detailed me-2"></i>Current Reservation / Session</span>
+        <span class="badge bg-warning text-dark">{{ active_reservation.status }}</span>
+    </div>
+    <div class="card-body">
+        <div class="row align-items-center">
+            <div class="col-md-8">
+                <h5 class="fw-bold mb-1">{{ active_reservation.facility_name }}</h5>
+                <p class="text-muted mb-2">Spot Number: <span class="badge bg-primary fs-6">Spot #{{ active_reservation.spot_number }}</span></p>
+                <div class="d-flex flex-wrap gap-3 small text-secondary">
+                    <div><i class="bi bi-upc-scan me-1"></i>Reservation ID: <code>{{ active_reservation.id }}</code></div>
+                    <div><i class="bi bi-car-front me-1"></i>Vehicle: <strong>{{ active_reservation.license_plate }}</strong> ({{ active_reservation.vehicle_type }})</div>
+                    <div><i class="bi bi-clock me-1"></i>Start Time: {{ active_reservation.start_time.strftime('%Y-%m-%d %H:%M') if active_reservation.start_time else 'Now' }}</div>
+                </div>
+            </div>
+            <div class="col-md-4 text-md-end mt-3 mt-md-0">
+                {% if active_reservation.status == 'CONFIRMED' %}
+                <form method="post" action="/customer/reservations/{{ active_reservation.id }}/cancel" onsubmit="return confirm('Are you sure you want to cancel this reservation?');">
+                    <button type="submit" class="btn btn-outline-danger">
+                        <i class="bi bi-x-circle me-1"></i>Cancel Reservation
+                    </button>
+                </form>
+                <div class="form-text small text-muted mt-1">Free cancellation within 60 mins of booking</div>
+                {% else %}
+                <span class="badge bg-success p-2 fs-6"><i class="bi bi-check-circle me-1"></i>Vehicle Inside Facility</span>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Reservations -->
+<div class="card shadow-sm mb-4">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-text me-2"></i>Recent Reservations</h5>
+        <a href="/customer/reservations" class="btn btn-sm btn-outline-secondary">View All</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_reservations %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Facility</th>
+                        <th>Spot</th>
+                        <th>Vehicle</th>
+                        <th>Start Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in recent_reservations %}
+                    <tr>
+                        <td><code>{{ (r.id|string)[:8] }}...</code></td>
+                        <td class="fw-semibold">{{ r.facility_name }}</td>
+                        <td><span class="badge bg-light text-dark border">#{{ r.spot_number }}</span></td>
+                        <td><strong>{{ r.license_plate }}</strong></td>
+                        <td class="small">{{ r.start_time.strftime('%Y-%m-%d %H:%M') if r.start_time else 'N/A' }}</td>
+                        <td>
+                            {% if r.status == 'CONFIRMED' %}
+                            <span class="badge bg-warning text-dark">CONFIRMED</span>
+                            {% elif r.status == 'ACTIVE' %}
+                            <span class="badge bg-success">ACTIVE</span>
+                            {% elif r.status == 'COMPLETED' %}
+                            <span class="badge bg-secondary">COMPLETED</span>
+                            {% elif r.status == 'CANCELLED' %}
+                            <span class="badge bg-danger">CANCELLED</span>
+                            {% elif r.status == 'EXPIRED' %}
+                            <span class="badge bg-info text-dark">EXPIRED</span>
+                            {% else %}
+                            <span class="badge bg-dark">{{ r.status }}</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">
+            <i class="bi bi-calendar-x fs-1 d-block mb-2 text-secondary"></i>
+            No reservations found. Book your first parking spot today!
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+
+{% block title %}Tariff Management - ParkEase{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <h2 class="h3 mb-1"><i class="bi bi-currency-rupee me-2 text-primary"></i>Tariff Management</h2>
+        <p class="text-muted mb-0">
+            {% if user.role == 'FACILITY_ADMIN' %}
+                Manage hourly parking rates for your facility.
+            {% else %}
+                Manage hourly parking rates across all facilities and zones.
+            {% endif %}
+        </p>
+    </div>
+    {% if user.role == 'FACILITY_ADMIN' %}
+        <span class="badge bg-info text-dark fs-6 px-3 py-2">
+            <i class="bi bi-shield-lock me-1"></i>Facility Admin Scoped
+        </span>
+    {% else %}
+        <span class="badge bg-primary fs-6 px-3 py-2">
+            <i class="bi bi-shield-check me-1"></i>Super Admin
+        </span>
+    {% endif %}
+</div>
+
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow-sm border-0 mb-4">
+            <div class="card-header bg-white py-3 border-bottom">
+                <h5 class="card-title mb-0 fw-bold">Active Tariffs & Hourly Rates</h5>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Facility</th>
+                            <th>Zone</th>
+                            <th>Vehicle Type</th>
+                            <th>Current Rate (₹ / hr)</th>
+                            <th style="min-width: 250px;">Update Hourly Rate</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for tariff in tariffs %}
+                        <tr>
+                            <td>
+                                <span class="fw-semibold">{{ tariff.facility_name }}</span>
+                            </td>
+                            <td>
+                                <span class="badge bg-light text-dark border">{{ tariff.zone_name }}</span>
+                            </td>
+                            <td>
+                                {% if tariff.vehicle_type == 'TWO_WHEELER' %}
+                                    <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-2 py-1">
+                                        <i class="bi bi-bicycle me-1"></i>2-Wheeler
+                                    </span>
+                                {% else %}
+                                    <span class="badge bg-primary-subtle text-primary-emphasis border border-primary-subtle px-2 py-1">
+                                        <i class="bi bi-car-front me-1"></i>4-Wheeler
+                                    </span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <span class="fs-5 fw-bold text-success">₹{{ "%.2f"|format(tariff.hourly_rate) }}</span>
+                                <small class="text-muted">/ hour</small>
+                            </td>
+                            <td>
+                                <form method="post" action="/admin/tariffs/{{ tariff.id }}/update" class="d-flex align-items-center gap-2">
+                                    <div class="input-group input-group-sm" style="max-width: 170px;">
+                                        <span class="input-group-text bg-white">₹</span>
+                                        <input type="number" name="hourly_rate" step="0.50" min="1" max="10000"
+                                               value="{{ tariff.hourly_rate }}" class="form-control" required>
+                                    </div>
+                                    <button type="submit" class="btn btn-sm btn-outline-primary px-3">
+                                        <i class="bi bi-check-circle me-1"></i>Save
+                                    </button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-4 text-muted">
+                                <i class="bi bi-inbox fs-3 d-block mb-2"></i>
+                                No tariffs configured for this facility.
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card bg-light border-0">
+            <div class="card-body">
+                <h6 class="fw-bold mb-2"><i class="bi bi-info-circle me-1 text-primary"></i>How Tariffs Work:</h6>
+                <ul class="text-muted small mb-0 ps-3">
+                    <li>Rate changes take effect immediately for upcoming completed parking sessions.</li>
+                    <li>Parking charges are calculated based on hourly rate with a minimum of 1 hour and rounded up to the next full hour upon vehicle exit.</li>
+                    <li>Facility Admins can only view and adjust rates for their assigned parking facility.</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

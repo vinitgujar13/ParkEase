@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Register - ParkEase{% endblock %}
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-6">
+        <div class="card shadow-sm mt-4">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="bi bi-person-plus-fill me-2"></i>Create an Account</h4>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="/register">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="name">Full Name</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                            <input type="text" id="name" name="name" class="form-control" required
+                                placeholder="John Doe" minlength="2" maxlength="100">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="email">Email Address</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-envelope-fill"></i></span>
+                            <input type="email" id="email" name="email" class="form-control" required
+                                placeholder="your@email.com">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold" for="password">Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" id="password" name="password" class="form-control" required
+                                placeholder="Minimum 8 characters" minlength="8">
+                            <button class="btn btn-outline-secondary" type="button" id="togglePassword"
+                                onclick="toggleVisibility('password', 'eyeIcon1')">
+                                <i id="eyeIcon1" class="bi bi-eye-fill"></i>
+                            </button>
+                        </div>
+                        <div class="form-text">Use at least 8 characters with uppercase, lowercase, and a number.</div>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold" for="confirm_password">Confirm Password</label>
+                        <div class="input-group">
+                            <span class="input-group-text"><i class="bi bi-lock-fill"></i></span>
+                            <input type="password" id="confirm_password" name="confirm_password" class="form-control"
+                                required placeholder="Re-enter your password" minlength="8">
+                            <button class="btn btn-outline-secondary" type="button"
+                                onclick="toggleVisibility('confirm_password', 'eyeIcon2')">
+                                <i id="eyeIcon2" class="bi bi-eye-fill"></i>
+                            </button>
+                        </div>
+                        <div id="passwordMatchMsg" class="form-text"></div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100" id="submitBtn">
+                        <i class="bi bi-person-check-fill me-1"></i>Create Account
+                    </button>
+                </form>
+                <hr>
+                <p class="text-center mb-0">
+                    Already have an account? <a href="/login">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function toggleVisibility(fieldId, iconId) {
+        const field = document.getElementById(fieldId);
+        const icon = document.getElementById(iconId);
+        if (field.type === 'password') {
+            field.type = 'text';
+            icon.classList.replace('bi-eye-fill', 'bi-eye-slash-fill');
+        } else {
+            field.type = 'password';
+            icon.classList.replace('bi-eye-slash-fill', 'bi-eye-fill');
+        }
+    }
+
+    const password = document.getElementById('password');
+    const confirmPassword = document.getElementById('confirm_password');
+    const matchMsg = document.getElementById('passwordMatchMsg');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function checkPasswordMatch() {
+        if (confirmPassword.value.length === 0) {
+            matchMsg.textContent = '';
+            matchMsg.className = 'form-text';
+            return;
+        }
+        if (password.value === confirmPassword.value) {
+            matchMsg.textContent = '✓ Passwords match';
+            matchMsg.className = 'form-text text-success';
+            submitBtn.disabled = false;
+        } else {
+            matchMsg.textContent = '✗ Passwords do not match';
+            matchMsg.className = 'form-text text-danger';
+            submitBtn.disabled = true;
+        }
+    }
+
+    password.addEventListener('input', checkPasswordMatch);
+    confirmPassword.addEventListener('input', checkPasswordMatch);
+</script>
+{% endblock %}

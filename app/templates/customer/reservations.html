@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}My Reservations - ParkEase{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-calendar-check text-primary me-2"></i>My Reservations</h2>
+            <p class="text-muted mb-0">View all your historical and active parking reservations.</p>
+        </div>
+        <a href="/customer/reserve" class="btn btn-primary">
+            <i class="bi bi-plus-circle me-1"></i>New Reservation
+        </a>
+    </div>
+</div>
+
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-journal-check me-2"></i>Reservation History</h5>
+        <span class="badge bg-primary">{{ reservations|length }} Records</span>
+    </div>
+    <div class="card-body p-0">
+        {% if reservations %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Booking ID</th>
+                        <th>Facility & Zone</th>
+                        <th>Spot #</th>
+                        <th>Vehicle</th>
+                        <th>Start Time</th>
+                        <th>Status</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for r in reservations %}
+                    <tr>
+                        <td>
+                            <code>{{ (r.id|string)[:8] }}...</code>
+                            <div class="small text-muted">{{ r.created_at.strftime('%d %b %Y, %H:%M') if r.created_at else '' }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold text-dark">{{ r.facility_name }}</div>
+                            <div class="small text-muted">{{ r.zone_name }} — {{ r.address }}</div>
+                        </td>
+                        <td>
+                            <span class="badge bg-primary fs-6">Spot #{{ r.spot_number }}</span>
+                            <div class="small text-muted">{{ r.spot_type }}</div>
+                        </td>
+                        <td>
+                            <div class="fw-bold font-monospace">{{ r.license_plate }}</div>
+                            <div class="small text-muted">{{ r.model }} ({{ r.vehicle_type }})</div>
+                        </td>
+                        <td>
+                            <div class="small fw-semibold">{{ r.start_time.strftime('%Y-%m-%d %H:%M') if r.start_time else 'N/A' }}</div>
+                        </td>
+                        <td>
+                            {% if r.status == 'CONFIRMED' %}
+                            <span class="badge bg-warning text-dark"><i class="bi bi-clock me-1"></i>CONFIRMED</span>
+                            {% elif r.status == 'ACTIVE' %}
+                            <span class="badge bg-success"><i class="bi bi-car-front me-1"></i>ACTIVE</span>
+                            {% elif r.status == 'COMPLETED' %}
+                            <span class="badge bg-secondary"><i class="bi bi-check2-all me-1"></i>COMPLETED</span>
+                            {% elif r.status == 'CANCELLED' %}
+                            <span class="badge bg-danger"><i class="bi bi-x-circle me-1"></i>CANCELLED</span>
+                            {% elif r.status == 'EXPIRED' %}
+                            <span class="badge bg-info text-dark"><i class="bi bi-hourglass-bottom me-1"></i>EXPIRED</span>
+                            {% else %}
+                            <span class="badge bg-dark">{{ r.status }}</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if r.status == 'CONFIRMED' %}
+                            <form method="post" action="/customer/reservations/{{ r.id }}/cancel" onsubmit="return confirm('Cancel this reservation?');">
+                                <button type="submit" class="btn btn-sm btn-outline-danger">
+                                    <i class="bi bi-x-lg me-1"></i>Cancel
+                                </button>
+                            </form>
+                            {% else %}
+                            <span class="text-muted small">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-5 text-muted">
+            <i class="bi bi-calendar-x fs-1 d-block mb-3 text-secondary"></i>
+            <h5 class="mb-2">No Reservations Found</h5>
+            <p class="small text-muted mb-3">You haven't reserved any parking spots yet.</p>
+            <a href="/customer/reserve" class="btn btn-primary">Book a Spot Now</a>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

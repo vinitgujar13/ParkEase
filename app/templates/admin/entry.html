@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Record Vehicle Entry - Admin{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-box-arrow-in-right text-success me-2"></i>Record Vehicle Entry</h2>
+            <p class="text-muted mb-0">Verify reservation and record entry into the facility.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/reservations" class="btn btn-outline-warning">
+                <i class="bi bi-calendar-check me-1"></i>Active Reservations
+            </a>
+            <a href="/admin/dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-success text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-shield-check me-2"></i>Entry Verification Gate</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-info border-0 mb-4 small">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    <strong>Academic Workflow:</strong>
+                    Copy the <strong>Reservation ID</strong> from the <a href="/admin/reservations" class="alert-link">Active Reservations</a> page, ensure the license plate matches, select the entry gate, and submit. The spot automatically switches to <strong>OCCUPIED</strong>.
+                </div>
+
+                <form method="post" action="/admin/entry">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Reservation ID *</label>
+                        <input type="text" name="reservation_id" class="form-control font-monospace" placeholder="e.g. 550e8400-e29b-41d4-a716-446655440000" value="{{ form_data.reservation_id if form_data else '' }}" required>
+                        <div class="form-text">Must be a valid UUID of a CONFIRMED reservation.</div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Vehicle License Plate *</label>
+                        <input type="text" name="license_plate" class="form-control text-uppercase font-monospace" placeholder="e.g. KA01AB1234" value="{{ form_data.license_plate if form_data else '' }}" required>
+                        <div class="form-text">System checks that this plate matches the vehicle on the reservation.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Entry Terminal Gate *</label>
+                        <select name="entry_terminal_id" class="form-select" required>
+                            <option value="">-- Select Entry Terminal Gate --</option>
+                            {% for t in terminals %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Gate must belong to the same facility as the reserved spot.</div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-success py-2 fw-semibold">
+                            <i class="bi bi-box-arrow-in-right me-1"></i>Verify & Record Entry
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

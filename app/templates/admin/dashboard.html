@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard - ParkEase{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-speedometer2 text-primary me-2"></i>Admin Dashboard</h2>
+            <p class="text-muted mb-0">System Overview & Live Operational Statistics</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/entry" class="btn btn-success">
+                <i class="bi bi-box-arrow-in-right me-1"></i>Record Entry
+            </a>
+            <a href="/admin/exit" class="btn btn-danger">
+                <i class="bi bi-box-arrow-right me-1"></i>Record Exit
+            </a>
+            <a href="/admin/reports/occupancy" class="btn btn-outline-primary">
+                <i class="bi bi-bar-chart-line me-1"></i>Reports
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Spot Statistics Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card bg-primary text-white shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-white-50">Total Spots</div>
+                    <div class="stat-number fs-1 fw-bold">{{ spot_stats.total_spots or 0 }}</div>
+                </div>
+                <i class="bi bi-grid-3x3-gap stat-icon fs-1 opacity-75"></i>
+            </div>
+            <a href="/admin/spots" class="text-white text-decoration-none small mt-2 d-inline-block">
+                View all spots <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card bg-success text-white shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-white-50">Available Spots</div>
+                    <div class="stat-number fs-1 fw-bold">{{ spot_stats.available or 0 }}</div>
+                </div>
+                <i class="bi bi-check-circle stat-icon fs-1 opacity-75"></i>
+            </div>
+            <span class="small text-white-50 mt-2 d-inline-block">Ready to occupy</span>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card bg-danger text-white shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-white-50">Occupied Spots</div>
+                    <div class="stat-number fs-1 fw-bold">{{ spot_stats.occupied or 0 }}</div>
+                </div>
+                <i class="bi bi-car-front-fill stat-icon fs-1 opacity-75"></i>
+            </div>
+            <a href="/admin/sessions" class="text-white text-decoration-none small mt-2 d-inline-block">
+                View active sessions <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card stat-card bg-warning text-dark shadow-sm p-3">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <div class="stat-label text-dark-50">Reserved Spots</div>
+                    <div class="stat-number fs-1 fw-bold">{{ spot_stats.reserved or 0 }}</div>
+                </div>
+                <i class="bi bi-clock-history stat-icon fs-1 opacity-75"></i>
+            </div>
+            <a href="/admin/reservations" class="text-dark text-decoration-none small mt-2 d-inline-block">
+                View active bookings <i class="bi bi-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Secondary KPI Row -->
+<div class="row g-3 mb-4">
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex align-items-center">
+                <div class="rounded-3 bg-primary bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-car-front fs-3 text-primary"></i>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Active Sessions</div>
+                    <div class="fs-3 fw-bold text-dark">{{ active_sessions }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex align-items-center">
+                <div class="rounded-3 bg-warning bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-calendar-check fs-3 text-warning"></i>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Confirmed Bookings</div>
+                    <div class="fs-3 fw-bold text-dark">{{ confirmed_reservations }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex align-items-center">
+                <div class="rounded-3 bg-success bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-currency-rupee fs-3 text-success"></i>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Total Revenue</div>
+                    <div class="fs-3 fw-bold text-success">₹{{ "%.2f"|format(total_revenue) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-xl-3">
+        <div class="card border-0 shadow-sm p-3">
+            <div class="d-flex align-items-center">
+                <div class="rounded-3 bg-info bg-opacity-10 p-3 me-3">
+                    <i class="bi bi-people fs-3 text-info"></i>
+                </div>
+                <div>
+                    <div class="text-muted small text-uppercase fw-semibold">Customers</div>
+                    <div class="fs-3 fw-bold text-dark">{{ total_customers }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Action Shortcuts -->
+<div class="row g-3 mb-4">
+    <div class="col-md-3">
+        <a href="/admin/entry" class="card shadow-sm border-0 text-decoration-none text-dark p-3 text-center h-100">
+            <div class="rounded-circle bg-success bg-opacity-10 p-3 d-inline-block mx-auto mb-2">
+                <i class="bi bi-box-arrow-in-right fs-2 text-success"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Vehicle Entry</h6>
+            <span class="small text-muted">Scan & record arriving vehicle</span>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/admin/exit" class="card shadow-sm border-0 text-decoration-none text-dark p-3 text-center h-100">
+            <div class="rounded-circle bg-danger bg-opacity-10 p-3 d-inline-block mx-auto mb-2">
+                <i class="bi bi-box-arrow-right fs-2 text-danger"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Vehicle Exit</h6>
+            <span class="small text-muted">Compute fee & collect payment</span>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/admin/reservations" class="card shadow-sm border-0 text-decoration-none text-dark p-3 text-center h-100">
+            <div class="rounded-circle bg-warning bg-opacity-10 p-3 d-inline-block mx-auto mb-2">
+                <i class="bi bi-calendar-check fs-2 text-warning"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Active Reservations</h6>
+            <span class="small text-muted">Verify plates & booking IDs</span>
+        </a>
+    </div>
+    <div class="col-md-3">
+        <a href="/admin/reports/occupancy" class="card shadow-sm border-0 text-decoration-none text-dark p-3 text-center h-100">
+            <div class="rounded-circle bg-primary bg-opacity-10 p-3 d-inline-block mx-auto mb-2">
+                <i class="bi bi-pie-chart fs-2 text-primary"></i>
+            </div>
+            <h6 class="fw-bold mb-1">Occupancy Report</h6>
+            <span class="small text-muted">Utilization and revenue analytics</span>
+        </a>
+    </div>
+</div>
+
+<!-- Recent Sessions Table -->
+<div class="card shadow-sm border-0">
+    <div class="card-header bg-light d-flex justify-content-between align-items-center">
+        <h5 class="mb-0 fw-bold"><i class="bi bi-clock-history me-2"></i>Recent Parking Sessions</h5>
+        <a href="/admin/sessions" class="btn btn-sm btn-outline-secondary">View All Sessions</a>
+    </div>
+    <div class="card-body p-0">
+        {% if recent_sessions %}
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>License Plate</th>
+                        <th>Type</th>
+                        <th>Facility</th>
+                        <th>Entry Terminal</th>
+                        <th>Entry Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for s in recent_sessions %}
+                    <tr>
+                        <td>
+                            <span class="badge bg-dark font-monospace fs-6">{{ s.license_plate }}</span>
+                        </td>
+                        <td>
+                            {% if s.vehicle_type == 'TWO_WHEELER' %}
+                            <span class="badge bg-info text-dark">Two-Wheeler</span>
+                            {% else %}
+                            <span class="badge bg-secondary">Four-Wheeler</span>
+                            {% endif %}
+                        </td>
+                        <td class="fw-semibold">{{ s.facility_name }}</td>
+                        <td><i class="bi bi-gate me-1 text-muted"></i>{{ s.entry_terminal }}</td>
+                        <td class="small">{{ s.entry_time.strftime('%Y-%m-%d %H:%M') if s.entry_time else 'N/A' }}</td>
+                        <td>
+                            {% if s.status == 'ACTIVE' %}
+                            <span class="badge bg-success">ACTIVE</span>
+                            {% else %}
+                            <span class="badge bg-secondary">COMPLETED</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <div class="text-center py-4 text-muted">No parking sessions recorded yet.</div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

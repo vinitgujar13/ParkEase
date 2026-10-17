@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+{% block title %}My Vehicles - ParkEase{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold mb-1"><i class="bi bi-car-front text-primary me-2"></i>My Vehicles</h2>
+        <p class="text-muted">Register and manage your vehicles for parking reservations.</p>
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Register Vehicle Form -->
+    <div class="col-lg-4">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-plus-circle me-2"></i>Register New Vehicle</h5>
+            </div>
+            <div class="card-body p-4">
+                <form method="post" action="/customer/vehicles">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">License Plate *</label>
+                        <input type="text" name="license_plate" class="form-control text-uppercase" placeholder="e.g. KA01AB1234" required pattern="[A-Za-z0-9\s-]{4,15}">
+                        <div class="form-text">All letters will be saved in uppercase.</div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Vehicle Type *</label>
+                        <select name="vehicle_type" class="form-select" required>
+                            <option value="">-- Select Type --</option>
+                            <option value="TWO_WHEELER">Two-Wheeler (Motorcycle / Scooter)</option>
+                            <option value="FOUR_WHEELER">Four-Wheeler (Car / SUV / Van)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Model *</label>
+                        <input type="text" name="model" class="form-control" placeholder="e.g. Honda City / Activa" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Color *</label>
+                        <input type="text" name="color" class="form-control" placeholder="e.g. Silver, Black, White" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="bi bi-check-lg me-1"></i>Add Vehicle
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Vehicles List -->
+    <div class="col-lg-8">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-light d-flex justify-content-between align-items-center">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-list-stars me-2"></i>Registered Vehicles</h5>
+                <span class="badge bg-primary">{{ vehicles|length }} Vehicles</span>
+            </div>
+            <div class="card-body p-0">
+                {% if vehicles %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Plate Number</th>
+                                <th>Type</th>
+                                <th>Model</th>
+                                <th>Color</th>
+                                <th>Registered On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for v in vehicles %}
+                            <tr>
+                                <td>
+                                    <span class="badge bg-dark fs-6 px-2 py-1 font-monospace">{{ v.license_plate }}</span>
+                                </td>
+                                <td>
+                                    {% if v.vehicle_type == 'TWO_WHEELER' %}
+                                    <span class="badge bg-info text-dark"><i class="bi bi-bicycle me-1"></i>Two-Wheeler</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary"><i class="bi bi-car-front me-1"></i>Four-Wheeler</span>
+                                    {% endif %}
+                                </td>
+                                <td class="fw-semibold">{{ v.model }}</td>
+                                <td>
+                                    <span class="badge bg-light text-dark border">{{ v.color }}</span>
+                                </td>
+                                <td class="small text-muted">
+                                    {{ v.created_at.strftime('%Y-%m-%d') if v.created_at else 'N/A' }}
+                                </td>
+                                <td>
+                                    <a href="/customer/reserve" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-p-square me-1"></i>Reserve Spot
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-car-front fs-1 d-block mb-3 text-secondary"></i>
+                    <p class="mb-2">No vehicles registered yet.</p>
+                    <p class="small text-muted">Use the form on the left to add your first vehicle.</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,62 @@
+{% extends "base.html" %}
+{% block title %}Record Vehicle Exit - Admin{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-box-arrow-right text-danger me-2"></i>Record Vehicle Exit & Payment</h2>
+            <p class="text-muted mb-0">Compute parking fee, release spot to AVAILABLE, and record SIMULATED payment.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/sessions" class="btn btn-outline-primary">
+                <i class="bi bi-list-check me-1"></i>Active Sessions
+            </a>
+            <a href="/admin/dashboard" class="btn btn-outline-secondary">
+                <i class="bi bi-speedometer2 me-1"></i>Dashboard
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-lg-7">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-danger text-white py-3">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-calculator me-2"></i>Exit Checkout Gate</h5>
+            </div>
+            <div class="card-body p-4">
+                <div class="alert alert-warning border-0 mb-4 small text-dark">
+                    <i class="bi bi-info-circle-fill me-2 text-warning"></i>
+                    <strong>Automated Exit Logic:</strong>
+                    The PL/pgSQL function <code>process_vehicle_exit</code> automatically calculates the duration, applies the zone tariff (min 1 hr, ceiling rounding), transitions the spot to <strong>AVAILABLE</strong>, completes the session, and registers a <strong>SIMULATED PAID</strong> payment.
+                </div>
+
+                <form method="post" action="/admin/exit">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Vehicle License Plate *</label>
+                        <input type="text" name="license_plate" class="form-control text-uppercase font-monospace fs-5" placeholder="e.g. KA01AB1234" value="{{ form_data.license_plate if form_data else '' }}" required>
+                        <div class="form-text">Enter the plate of any vehicle currently having an ACTIVE session.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Exit Terminal Gate *</label>
+                        <select name="exit_terminal_id" class="form-select" required>
+                            <option value="">-- Select Exit Terminal Gate --</option>
+                            {% for t in terminals %}
+                            <option value="{{ t.id }}">{{ t.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Must be an EXIT terminal of the facility where vehicle is parked.</div>
+                    </div>
+
+                    <div class="d-grid">
+                        <button type="submit" class="btn btn-danger py-2 fw-semibold">
+                            <i class="bi bi-credit-card-2-front me-1"></i>Calculate Fee, Record Exit & Payment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

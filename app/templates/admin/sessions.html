@@ -1,0 +1,145 @@
+{% extends "base.html" %}
+{% block title %}Sessions & Payments - Admin{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12 d-flex justify-content-between align-items-center flex-wrap gap-2">
+        <div>
+            <h2 class="fw-bold mb-1"><i class="bi bi-list-check text-primary me-2"></i>Parking Sessions & Payments</h2>
+            <p class="text-muted mb-0">Audit vehicle entry/exit durations, fees collected, and payment reference numbers.</p>
+        </div>
+        <div class="d-flex gap-2">
+            <a href="/admin/entry" class="btn btn-success"><i class="bi bi-box-arrow-in-right me-1"></i>New Entry</a>
+            <a href="/admin/exit" class="btn btn-danger"><i class="bi bi-box-arrow-right me-1"></i>New Exit</a>
+        </div>
+    </div>
+</div>
+
+<!-- Tabs Navigation -->
+<ul class="nav nav-tabs mb-4" id="sessionTabs" role="tablist">
+    <li class="nav-item" role="presentation">
+        <button class="nav-link active fw-semibold" id="sessions-tab" data-bs-toggle="tab" data-bs-target="#sessions-pane" type="button" role="tab">
+            <i class="bi bi-car-front me-2"></i>Parking Sessions ({{ sessions|length }})
+        </button>
+    </li>
+    <li class="nav-item" role="presentation">
+        <button class="nav-link fw-semibold" id="payments-tab" data-bs-toggle="tab" data-bs-target="#payments-pane" type="button" role="tab">
+            <i class="bi bi-receipt me-2"></i>Simulated Payments ({{ payments|length }})
+        </button>
+    </li>
+</ul>
+
+<div class="tab-content" id="sessionTabsContent">
+    <!-- Sessions Tab -->
+    <div class="tab-pane fade show active" id="sessions-pane" role="tabpanel">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                {% if sessions %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Session ID</th>
+                                <th>Vehicle</th>
+                                <th>Facility & Spot</th>
+                                <th>Terminals (In / Out)</th>
+                                <th>Entry Time</th>
+                                <th>Exit Time</th>
+                                <th>Amount</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for s in sessions %}
+                            <tr>
+                                <td><code>{{ (s.id|string)[:8] }}...</code></td>
+                                <td>
+                                    <span class="badge bg-dark font-monospace fs-6">{{ s.license_plate }}</span>
+                                    <div class="small text-muted">{{ s.vehicle_type }}</div>
+                                </td>
+                                <td>
+                                    <div class="fw-semibold">{{ s.facility_name }}</div>
+                                    <span class="badge bg-primary">Spot #{{ s.spot_number }}</span>
+                                </td>
+                                <td class="small">
+                                    <div><i class="bi bi-box-arrow-in-right text-success me-1"></i>{{ s.entry_terminal }}</div>
+                                    {% if s.exit_terminal %}
+                                    <div><i class="bi bi-box-arrow-right text-danger me-1"></i>{{ s.exit_terminal }}</div>
+                                    {% else %}
+                                    <div class="text-muted"><i class="bi bi-dash me-1"></i>Still inside</div>
+                                    {% endif %}
+                                </td>
+                                <td class="small">{{ s.entry_time.strftime('%Y-%m-%d %H:%M') if s.entry_time else 'N/A' }}</td>
+                                <td class="small">{{ s.exit_time.strftime('%Y-%m-%d %H:%M') if s.exit_time else '—' }}</td>
+                                <td>
+                                    {% if s.amount %}
+                                    <span class="fw-bold text-success">₹{{ "%.2f"|format(s.amount) }}</span>
+                                    {% else %}
+                                    <span class="text-muted small">In Progress</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if s.status == 'ACTIVE' %}
+                                    <span class="badge bg-success"><i class="bi bi-circle-fill me-1 small"></i>ACTIVE</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">COMPLETED</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-car-front fs-1 d-block mb-3 text-secondary"></i>
+                    No parking sessions recorded.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- Payments Tab -->
+    <div class="tab-pane fade" id="payments-pane" role="tabpanel">
+        <div class="card shadow-sm border-0">
+            <div class="card-body p-0">
+                {% if payments %}
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Reference Number</th>
+                                <th>Vehicle Plate</th>
+                                <th>Amount</th>
+                                <th>Method</th>
+                                <th>Status</th>
+                                <th>Paid At</th>
+                                <th>Session ID</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for p in payments %}
+                            <tr>
+                                <td><code class="fw-bold user-select-all">{{ p.reference_number }}</code></td>
+                                <td><span class="badge bg-dark font-monospace">{{ p.license_plate }}</span></td>
+                                <td><span class="fs-6 fw-bold text-success">₹{{ "%.2f"|format(p.amount) }}</span></td>
+                                <td><span class="badge bg-info text-dark">{{ p.payment_method }}</span></td>
+                                <td><span class="badge bg-success">{{ p.status }}</span></td>
+                                <td class="small">{{ p.paid_at.strftime('%Y-%m-%d %H:%M:%S') if p.paid_at else 'N/A' }}</td>
+                                <td><code>{{ (p.session_id|string)[:8] }}...</code></td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center py-5 text-muted">
+                    <i class="bi bi-receipt fs-1 d-block mb-3 text-secondary"></i>
+                    No payments processed yet. Payments are generated automatically upon vehicle exit.
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

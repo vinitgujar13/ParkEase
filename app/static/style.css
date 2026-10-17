@@ -1,0 +1,184 @@
+/* ParkEase - Custom Styles */
+
+:root {
+    --primary: #0d6efd;
+    --success: #198754;
+    --warning: #ffc107;
+    --danger: #dc3545;
+    --info: #0dcaf0;
+}
+
+body {
+    background-color: #f8f9fa;
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+}
+
+/* Navbar */
+.navbar {
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+.navbar-brand {
+    font-size: 1.4rem;
+    letter-spacing: 0.5px;
+}
+
+/* Cards */
+.card {
+    border: none;
+    border-radius: 12px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+}
+
+.card-header {
+    border-radius: 12px 12px 0 0 !important;
+    font-weight: 600;
+}
+
+/* Stats Cards */
+.stat-card {
+    border-radius: 12px;
+    color: white;
+    padding: 1.25rem;
+}
+
+.stat-card .stat-icon {
+    font-size: 2.5rem;
+    opacity: 0.8;
+}
+
+.stat-card .stat-number {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+.stat-card .stat-label {
+    font-size: 0.85rem;
+    opacity: 0.9;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+/* Spot grid */
+.spot-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 8px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    margin: 4px;
+}
+
+.spot-available { background: #d1e7dd; color: #0f5132; }
+.spot-reserved  { background: #fff3cd; color: #664d03; }
+.spot-occupied  { background: #f8d7da; color: #842029; }
+.spot-maintenance { background: #e2e3e5; color: #383d41; }
+
+/* Status badges */
+.badge-status-CONFIRMED   { background-color: #ffc107; color: #333; }
+.badge-status-ACTIVE      { background-color: #198754; color: #fff; }
+.badge-status-COMPLETED   { background-color: #6c757d; color: #fff; }
+.badge-status-CANCELLED   { background-color: #dc3545; color: #fff; }
+.badge-status-EXPIRED     { background-color: #0dcaf0; color: #333; }
+.badge-status-PAID        { background-color: #198754; color: #fff; }
+
+/* Tables */
+.table thead th {
+    background-color: #f8f9fa;
+    border-bottom: 2px solid #dee2e6;
+    font-weight: 600;
+    text-transform: uppercase;
+    font-size: 0.8rem;
+    letter-spacing: 0.5px;
+    color: #6c757d;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(13, 110, 253, 0.04);
+}
+
+/* Forms */
+.form-control:focus, .form-select:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.15);
+}
+
+.form-label {
+    font-weight: 500;
+}
+
+/* Buttons */
+.btn {
+    border-radius: 8px;
+    font-weight: 500;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #0d6efd, #0b5ed7);
+}
+
+/* Alerts */
+.alert {
+    border: none;
+    border-radius: 10px;
+    border-left: 4px solid;
+}
+
+.alert-success { border-left-color: var(--success); }
+.alert-danger  { border-left-color: var(--danger); }
+.alert-warning { border-left-color: var(--warning); }
+.alert-info    { border-left-color: var(--info); }
+
+/* Footer */
+.footer {
+    margin-top: auto;
+    background-color: #f8f9fa;
+}
+
+/* Page header */
+.page-header {
+    border-bottom: 2px solid #e9ecef;
+    padding-bottom: 0.75rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Info box */
+.info-box {
+    background: linear-gradient(135deg, #e8f4fd, #d1ecf1);
+    border-left: 4px solid #0dcaf0;
+    border-radius: 8px;
+    padding: 1rem;
+}
+
+/* Quick action cards */
+.action-card {
+    text-decoration: none;
+    color: inherit;
+}
+
+.action-card:hover {
+    color: inherit;
+}
+
+/* Nav tabs */
+.nav-tabs .nav-link.active {
+    font-weight: 600;
+    color: var(--primary);
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .stat-card .stat-number {
+        font-size: 1.5rem;
+    }
+}

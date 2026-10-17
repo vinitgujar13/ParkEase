@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}Reserve Parking Spot - ParkEase{% endblock %}
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h2 class="fw-bold mb-1"><i class="bi bi-calendar-plus text-primary me-2"></i>Reserve Parking Spot</h2>
+        <p class="text-muted">The system automatically assigns the lowest-numbered compatible available spot.</p>
+    </div>
+</div>
+
+{% if active_reservation %}
+<div class="alert alert-warning border-0 shadow-sm mb-4">
+    <div class="d-flex align-items-center">
+        <i class="bi bi-exclamation-triangle-fill fs-3 me-3 text-warning"></i>
+        <div>
+            <h5 class="fw-bold mb-1">Active Booking Detected</h5>
+            <p class="mb-0">You already have an active or confirmed booking. Under system policy, customers are limited to one active reservation or parking session at a time.</p>
+            <div class="mt-2">
+                <a href="/customer/reservations" class="btn btn-sm btn-dark">View My Current Reservation</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row g-4">
+    <!-- Reservation Form -->
+    <div class="col-lg-6">
+        <div class="card shadow-sm border-0">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0 fw-bold"><i class="bi bi-ticket-perforated me-2"></i>Booking Form</h5>
+            </div>
+            <div class="card-body p-4">
+                {% if not vehicles %}
+                <div class="alert alert-info border-0 mb-3">
+                    <i class="bi bi-info-circle me-1"></i> You need to register a vehicle first before making a reservation.
+                    <div class="mt-2">
+                        <a href="/customer/vehicles" class="btn btn-sm btn-info text-white">Register Vehicle Now</a>
+                    </div>
+                </div>
+                {% endif %}
+
+                <form method="post" action="/customer/reserve">
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Select Vehicle *</label>
+                        <select name="vehicle_id" class="form-select" required {% if not vehicles or active_reservation %}disabled{% endif %}>
+                            <option value="">-- Choose your vehicle --</option>
+                            {% for v in vehicles %}
+                            <option value="{{ v.id }}">
+                                {{ v.license_plate }} ({{ v.vehicle_type }} - {{ v.model }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">Spot will be matched automatically to this vehicle's type.</div>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Select Parking Facility *</label>
+                        <select name="facility_id" class="form-select" required {% if not vehicles or active_reservation %}disabled{% endif %}>
+                            <option value="">-- Choose a facility --</option>
+                            {% for f in facilities %}
+                            <option value="{{ f.id }}">
+                                {{ f.name }} ({{ f.city }}) — Two-Wheeler: {{ f.tw_available }} free | Four-Wheeler: {{ f.fw_available }} free
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="p-3 bg-light rounded mb-4 small text-secondary">
+                        <h6 class="fw-bold text-dark mb-2"><i class="bi bi-shield-check text-success me-1"></i>Business Rules:</h6>
+                        <ul class="mb-0 ps-3">
+                            <li>Reservation holds the spot for <strong>60 minutes</strong> from start time.</li>
+                            <li>The lowest available spot matching vehicle type is allocated atomically.</li>
+                            <li>Payment is collected when exiting the facility.</li>
+                        </ul>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-100 py-2 fs-6 fw-semibold" {% if not vehicles or active_reservation %}disabled{% endif %}>
+                        <i class="bi bi-check2-circle me-1"></i>Confirm Reservation
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Facility Availability Overview -->
+    <div class="col-lg-6">
+        <h5 class="fw-bold mb-3"><i class="bi bi-building me-2 text-secondary"></i>Facility Availability</h5>
+        <div class="row g-3">
+            {% for f in facilities %}
+            <div class="col-12">
+                <div class="card shadow-sm border-0 h-100">
+                    <div class="card-body">
+                        <div class="d-flex justify-content-between align-items-start mb-2">
+                            <div>
+                                <h5 class="fw-bold mb-0 text-primary">{{ f.name }}</h5>
+                                <div class="text-muted small"><i class="bi bi-geo-alt me-1"></i>{{ f.address }}, {{ f.city }}</div>
+                            </div>
+                            <span class="badge bg-success">ACTIVE</span>
+                        </div>
+                        <hr class="my-2">
+                        <div class="row text-center mt-3 g-2">
+                            <div class="col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <div class="small text-muted mb-1"><i class="bi bi-bicycle me-1"></i>Two-Wheeler</div>
+                                    <div class="fs-4 fw-bold {% if f.tw_available > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ f.tw_available }}
+                                    </div>
+                                    <div class="small text-muted">Available</div>
+                                </div>
+                            </div>
+                            <div class="col-6">
+                                <div class="p-2 border rounded bg-light">
+                                    <div class="small text-muted"><i class="bi bi-car-front me-1"></i>Four-Wheeler</div>
+                                    <div class="fs-4 fw-bold {% if f.fw_available > 0 %}text-success{% else %}text-danger{% endif %}">
+                                        {{ f.fw_available }}
+                                    </div>
+                                    <div class="small text-muted">Available</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endblock %}
